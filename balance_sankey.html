@@ -91,33 +91,28 @@
   }
   .totals-strip .pill b{color:var(--ink); font-size:13px;}
 
-  .col-headers{
+  .col-headers {
+    display: grid;
 
-    display:grid;
-
-    /*
-      EXACTAMENTE la misma geometría
-      que utiliza el SVG.
-
-      230 px = nodo
-      130 px = espacio del enlace
-    */
     grid-template-columns:
-      230px 130px
-      230px 130px
-      230px 130px
-      230px 130px
-      230px;
+      9.1429% 11.2286%
+      11.1429% 11.2286%
+      11.1429% 11.2286%
+      11.1429% 11.2286%
+      11.1429%;
 
-    width:1750px;
+    width: 1750px;
+    max-width: none;
 
-    margin:0 auto;
+    margin: 0 auto;
 
-    padding:6px 40px 0;
+    padding: 19px 0 0;
 
-    column-gap:0;
+    box-sizing: border-box;
 
-    overflow:hidden;
+    column-gap: 0;
+
+    overflow: hidden;
   }
 
 
@@ -139,6 +134,8 @@
 
     border-bottom:2px solid var(--line);
 
+    white-space: nowrap;
+
   }
 
 
@@ -154,10 +151,20 @@
   }
 
   .chart-wrap{
-    padding:6px 12px 10px;
+    width: 100%;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
     overflow-x:auto;
   }
-  svg{display:block; margin:0 auto;}
+  
+  #sankeySvg {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+  }
 
   .node-card{
     background:var(--card-bg);
@@ -219,7 +226,7 @@
     font-size:12px;
     color:var(--muted);
     border-top:1px solid var(--line);
-    margin-top:6px;
+    margin-top:4px;
   }
   .legend .item{display:flex;align-items:center;gap:7px;}
   .legend .dot{width:10px;height:10px;border-radius:50%;}
@@ -670,6 +677,99 @@
 
     font-size:12px;
   }
+
+  @media (max-width: 2200px) {
+
+      .chart-wrap {
+          margin: 0;
+          padding: 0;
+      }
+
+      .col-headers {
+        width: 100%;
+        max-width: none;
+
+        /*
+         * Mantenemos la misma geometría proporcional
+         * que utiliza actualmente el Sankey.
+         */
+        grid-template-columns:
+          11.1429% 9.9286%
+          11.1429% 9.5286%
+          11.1429% 9.0286%
+          11.1429% 9.4286%
+          11.1429% 0%;
+
+
+        margin-left: 10px;
+        padding: 19px 0 0;
+      }
+
+      .legend {
+          margin-top: 4px;
+      }
+
+  }
+
+  @media (max-width: 1200px) {
+
+      .chart-wrap {
+          margin: 0;
+          padding: 0;
+      }
+
+      .col-headers {
+        width: 100%;
+        max-width: none;
+
+        /*
+         * Mantenemos la misma geometría proporcional
+         * que utiliza actualmente el Sankey.
+         */
+        grid-template-columns:
+          11.1429% 11.2286%
+          11.1429% 11.2286%
+          11.1429% 11.2286%
+          11.1429% 11.2286%
+          11.1429%;
+
+        margin: 0;
+        padding: 19px 0 0;
+      }
+
+      .legend {
+          margin-top: 4px;
+      }
+
+  }
+
+  @media (max-width: 900px) {
+
+      .col-headers {
+        width: 100%;
+        max-width: none;
+
+        /*
+         * Mantenemos la misma geometría proporcional
+         * que utiliza actualmente el Sankey.
+         */
+        grid-template-columns:
+          11.1429% 11.2286%
+          11.1429% 11.2286%
+          11.1429% 11.2286%
+          11.1429% 11.2286%
+          11.1429%;
+
+        margin: 0;
+        padding: 19px 0 0;
+      }
+
+      .legend {
+          gap: 10px;
+          margin-top: 4px;
+      }
+  }
+
 </style>
 </head>
 <body>
@@ -708,7 +808,7 @@
   <span>Fuentes Primarias</span>
   <span class="link-space"></span>
 
-  <span>Oferta Bruta</span>
+  <span>Oferta Total de Energía Primaria</span>
   <span class="link-space"></span>
 
   <span>Transformación</span>
@@ -1024,8 +1124,8 @@ function buildModel(data){
 
   });
 
-  // Columna 2: Oferta Bruta (nodo único)
-  nodes.c2.push({ id:'c2:Oferta Bruta', col:2, name:'Oferta Bruta', value:data.ofertaBruta, isHero:true });
+  // Columna 2: Oferta Total de Energía Primaria (nodo único)
+  nodes.c2.push({ id:'c2:Oferta Total de Energía Primaria', col:2, name:'Oferta Total de Energía Primaria', value:data.ofertaBruta, isHero:true });
 
   // Columna 3: Transformación
   data.transformacion.forEach(t=>{
@@ -1159,9 +1259,9 @@ function buildModel(data){
   ['c1','c3','c4','c5'].forEach(k=> nodes[k].sort((a,b)=> b.value - a.value));
 
   // ---- Enlaces ----
-  // Fuentes -> Oferta Bruta (energéticos primarios: Producción + Importación + Variación de Inventarios + De otras fuentes)
+  // Fuentes -> Oferta Total de Energía Primaria (energéticos primarios: Producción + Importación + Variación de Inventarios + De otras fuentes)
   data.fuentesPrimarias.forEach(f=>{
-    if (Math.abs(f.toOfertaBruta)>0.05) links.push({ source:'c1:'+f.name, target:'c2:Oferta Bruta', value:Math.abs(f.toOfertaBruta), category:'oferta', negative: f.toOfertaBruta<0 });
+    if (Math.abs(f.toOfertaBruta)>0.05) links.push({ source:'c1:'+f.name, target:'c2:Oferta Total de Energía Primaria', value:Math.abs(f.toOfertaBruta), category:'oferta', negative: f.toOfertaBruta<0 });
   });
 
   // Fuentes -> Energéticos Finales (energéticos secundarios que llegan ya "hechos" por
@@ -1172,18 +1272,18 @@ function buildModel(data){
     });
   });
 
-  // Oferta Bruta -> Transformación (entradas: energéticos primarios en negativo -> positivo)
+  // Oferta Total de Energía Primaria -> Transformación (entradas: energéticos primarios en negativo -> positivo)
   data.transformacion.forEach(t=>{
-    if (t.value>0) links.push({ source:'c2:Oferta Bruta', target:'c3:'+t.name, value:t.value, category:'oferta' });
+    if (t.value>0) links.push({ source:'c2:Oferta Total de Energía Primaria', target:'c3:'+t.name, value:t.value, category:'oferta' });
   });
-  // Oferta Bruta -> Energéticos Finales (uso directo, bypass col3)
+  // Oferta Total de Energía Primaria -> Energéticos Finales (uso directo, bypass col3)
   Object.entries(data.usoDirectoAlloc||{}).forEach(([carrier,val])=>{
-    if (val>0) links.push({ source:'c2:Oferta Bruta', target:'c4:'+carrier, value:val, category:'oferta', bypass:true });
+    if (val>0) links.push({ source:'c2:Oferta Total de Energía Primaria', target:'c4:'+carrier, value:val, category:'oferta', bypass:true });
   });
-  // Oferta Bruta -> Exportaciones (porción de energéticos primarios exportados, ej. petróleo crudo)
-  if (data.exportacion.fromOfertaBruta>0) links.push({ source:'c2:Oferta Bruta', target:'c5:Exportaciones', value:data.exportacion.fromOfertaBruta, category:'exportaciones', bypass:true });
-  // Oferta Bruta -> Pérdidas del Sistema (no aprovechada + consumo propio + pérdidas T&D + ajuste estadístico)
-  if (data.perdidasSistema.fromOfertaBruta>0) links.push({ source:'c2:Oferta Bruta', target:'c5:Pérdidas del Sistema', value:data.perdidasSistema.fromOfertaBruta, category:'perdidas', bypass:true });
+  // Oferta Total de Energía Primaria -> Exportaciones (porción de energéticos primarios exportados, ej. petróleo crudo)
+  if (data.exportacion.fromOfertaBruta>0) links.push({ source:'c2:Oferta Total de Energía Primaria', target:'c5:Exportaciones', value:data.exportacion.fromOfertaBruta, category:'exportaciones', bypass:true });
+  // Oferta Total de Energía Primaria -> Pérdidas del Sistema (no aprovechada + consumo propio + pérdidas T&D + ajuste estadístico)
+  if (data.perdidasSistema.fromOfertaBruta>0) links.push({ source:'c2:Oferta Total de Energía Primaria', target:'c5:Pérdidas del Sistema', value:data.perdidasSistema.fromOfertaBruta, category:'perdidas', bypass:true });
 
   // Transformación -> Energéticos Finales (asignación directa por energético secundario producido)
   data.transformacion.forEach(t=>{
@@ -1199,11 +1299,11 @@ function buildModel(data){
     });
   });
 
-  // Oferta Bruta -> Sectores (energéticos PRIMARIOS de uso directo, ej. Leña, Carbón, Solar,
+  // Oferta Total de Energía Primaria -> Sectores (energéticos PRIMARIOS de uso directo, ej. Leña, Carbón, Solar,
   // Bagazo: no pasan por Transformación ni tienen nodo en "Energéticos Finales")
   data.sectoresConsumo.forEach(s=>{
     Object.entries(s.byCarrierPrimario||{}).forEach(([carrier,val])=>{
-      if (Math.abs(val)>0.05) links.push({ source:'c2:Oferta Bruta', target:'c5:'+s.name, value:Math.abs(val), category:'oferta', bypass:true, negative: val<0 });
+      if (Math.abs(val)>0.05) links.push({ source:'c2:Oferta Total de Energía Primaria', target:'c5:'+s.name, value:Math.abs(val), category:'oferta', bypass:true, negative: val<0 });
     });
   });
 
@@ -1468,10 +1568,14 @@ function render(year){
     });
 
     const svg = document.getElementById('sankeySvg');
-    svg.setAttribute('viewBox', `0 0 ${SVG_WIDTH} ${svgH}`);
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', svgH);
-    svg.innerHTML = '';
+
+svg.setAttribute('viewBox', `0 0 ${SVG_WIDTH} ${svgH}`);
+svg.setAttribute('preserveAspectRatio', 'xMidYMin meet');
+
+svg.style.width = '100%';
+svg.style.height = 'auto';
+
+svg.innerHTML = '';
 
     const NS = 'http://www.w3.org/2000/svg';
     const defs = document.createElementNS(NS,'defs');
@@ -1626,7 +1730,7 @@ function render(year){
         if(n.isHero){
           div.className = 'oferta-node';
           div.innerHTML = `<div class="node-card">
-            <div class="node-name">Oferta Bruta</div>
+            <div class="node-name">Oferta Total de Energía Primaria</div>
             <div class="node-value">${fmt(n.value)} PJ<small>100%</small></div>
           </div>`;
         } else {
@@ -2105,7 +2209,7 @@ function renderTotalsStrip(data, year){
   strip.innerHTML = `
     <div class="pill">Año seleccionado: <b>${year}</b></div>
     <div class="pill">Producción + Importación: <b>${fmt(totalPrimaria)} PJ</b></div>
-    <div class="pill">Oferta Bruta: <b>${fmt(data.ofertaBruta)} PJ</b></div>
+    <div class="pill">Oferta Total de Energía Primaria: <b>${fmt(data.ofertaBruta)} PJ</b></div>
     <div class="pill">Exportaciones: <b>${fmt(data.exportacion.total)} PJ</b></div>
     <div class="pill">Consumo Final (sectores): <b>${fmt(totalConsumoFinal)} PJ</b></div>
   `;
@@ -2176,7 +2280,7 @@ function getHistoricalNodeValue(data, node){
     }
 
     // -----------------------------------------
-    // Oferta Bruta
+    // Oferta Total de Energía Primaria
     // -----------------------------------------
     case 2:
 
